@@ -186,54 +186,48 @@
             const taxId = "7"; // ID do imposto fixo
     
             // Obtém o total acumulado das vendas e impostos para o médico
-            const accumulatedSales = salesData[doctorId]?.totalSales || 0;
-            const accumulatedTaxes = salesData[doctorId]?.totalTaxes || 0;
-    
-            const webhookData = {
-                username: "Sistema de Vendas",
-        
+                      const accumulatedTaxes = salesData[doctorId]?.totalTaxes || 0;
+
+            // Monta o payload para o webhook
+            const payload = {
+                content: null,
                 embeds: [{
-                    title: "📦 Venda de Remédios",
-                    color: 13632027,
+                    title: "💰 Venda de Remédios",
                     fields: [
-                        { name: "👤 Nome do Cliente", value: clientName },
-                        { name: "🆔 Número do Passaporte", value: passportNumber },
-                        { name: "📦 Quantidade Vendida", value: soldQuantity },
-                        { name: "💵 Valor por Remédio", value: `R$ ${RemédioValue}` },
-                        { name: "💰 Total a Pagar", value: `R$ ${totalAmount}` },
-                        { name: "⚠️ Imposto Calculado (40%)", value: `R$ ${taxAmount}` },
-                        { name: "🩺 Nome do Médico", value: doctorName },
-                        { name: "🆔 ID do Médico", value: doctorId },
-                        { name: "📑 ID do Imposto", value: taxId },
-                        { name: "📈 Total Acumulado em Vendas", value: `R$ ${accumulatedSales.toFixed(2)}` },
-                        { name: "📉 Total Acumulado em Impostos", value: `R$ ${accumulatedTaxes.toFixed(2)}` }
+                        { name: "👤 Nome do Cliente", value: clientName, inline: true },
+                        { name: "🆔 Número do Passaporte", value: passportNumber, inline: true },
+                        { name: "📦 Quantidade Vendida", value: soldQuantity, inline: true },
+                        { name: "💵 Valor por Remédio", value: `R$ ${RemédioValue}`, inline: true },
+                        { name: "💰 Total a Pagar", value: `R$ ${totalAmount}`, inline: true },
+                        { name: "⚠️ Imposto Calculado (40%)", value: `R$ ${taxAmount}`, inline: true },
+                        { name: "🩺 Nome do Médico", value: doctorName, inline: true },
+                        { name: "🆔 ID do Médico", value: doctorId, inline: true },
+                        { name: "📑 ID do Imposto", value: taxId, inline: true },
+                        { name: "💼 Total Acumulado de Vendas", value: `R$ ${accumulatedSales.toFixed(2)}`, inline: true },
+                        { name: "💼 Total Acumulado de Impostos", value: `R$ ${accumulatedTaxes.toFixed(2)}`, inline: true },
                     ],
-                    footer: {
-                        text: "Venda realizada com sucesso!"
-                    }
+                    color: 0xd9534f // Cor do embed (vermelho)
                 }]
             };
-    
-            // Envio dos dados para o webhook
+
+            // Envia os dados para o webhook
             fetch("https://discord.com/api/webhooks/1302297331449725050/-79XhjOQYiiSNBaOq0A9WQezJ5lD-rywn3I5jgrDdRl2wJ_-iZOvpyVosShzJO2kq-OG", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(webhookData)
+                body: JSON.stringify(payload)
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`Erro ao enviar dados para o webhook: ${response.status} - ${response.statusText}`);
+                    throw new Error(`Erro: ${response.status} - ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(data => {
                 alert("Dados enviados com sucesso!");
-                console.log(data); // Para verificar a resposta do servidor
             })
             .catch(error => {
-                console.error("Erro:", error);
                 alert(`Ocorreu um erro ao enviar os dados: ${error.message}`);
             });
         });
