@@ -61,14 +61,14 @@
         button:hover {
             background-color: #0056b3;
         }
-        .embed-output {
+        .embed-output, .data-display {
             margin-top: 20px;
             padding: 10px;
-            background-color: #e7f3fe;
-            border: 1px solid #b3d4fc;
+            border: 1px solid #007BFF;
             border-radius: 5px;
-            max-height: 300px; /* Limita a altura máxima do output */
-            overflow: auto; /* Adiciona rolagem se necessário */
+            background-color: #e7f3fe;
+            max-height: 300px;
+            overflow: auto;
         }
     </style>
 </head>
@@ -104,27 +104,13 @@
         
         <button id="generateEmbed">Gerar Embed</button>
 
-        <div class="embed-output" id="embedOutput" style="display:none;">
-            <!-- Aqui podemos deixar vazio para enviar o embed -->
-        </div>
-        
+        <div class="embed-output" id="embedOutput" style="display:none;"></div>
+        <div class="data-display" id="dataDisplay" style="display:none;"></div>
+
         <button id="sendWebhook" style="margin-top: 10px;">Enviar Dados</button>
     </div>
 
     <script>
-        // Função para carregar os dados do localStorage
-        function loadSalesData() {
-            const storedData = localStorage.getItem('salesData');
-            return storedData ? JSON.parse(storedData) : {};
-        }
-    
-        // Função para salvar os dados no localStorage
-        function saveSalesData(data) {
-            localStorage.setItem('salesData', JSON.stringify(data));
-        }
-    
-        let salesData = loadSalesData(); // Carrega dados do localStorage
-    
         document.getElementById("generateEmbed").addEventListener("click", function() {
             const clientName = document.getElementById("clientName").value;
             const passportNumber = document.getElementById("passportNumber").value;
@@ -132,131 +118,116 @@
             const RemédioValue = parseFloat(document.getElementById("RemédioValue").value);
             const doctorName = document.getElementById("doctorName").value;
             const doctorId = document.getElementById("doctorId").value;
-    
+
             const totalAmount = soldQuantity * RemédioValue; // Cálculo do total da venda
-            const taxAmount = totalAmount * 0.40; // Cálculo do imposto
-    
-            // Atualiza os dados de vendas para o ID do médico
-            if (!salesData[doctorId]) {
-                salesData[doctorId] = {
-                    totalSales: 0,
-                    totalTaxes: 0
-                };
-            }
-    
-            // Atualiza os totais
-            salesData[doctorId].totalSales += totalAmount; // Soma o total da venda
-            salesData[doctorId].totalTaxes += taxAmount; // Soma o imposto
-    
-            // Salva os dados atualizados no localStorage
-            saveSalesData(salesData);
-        });
-    
-        document.getElementById("sendWebhook").addEventListener("click", function() {
-            const clientName = document.getElementById("clientName").value;
-            const passportNumber = document.getElementById("passportNumber").value;
-            const soldQuantity = document.getElementById("soldQuantity").value;
-            const RemédioValue = document.getElementById("RemédioValue").value;
-            const totalAmount = soldQuantity * RemédioValue; // Recalcula o total
-            const taxAmount = totalAmount * 0.40; // Recalcula o imposto
-            const doctorName = document.getElementById("doctorName").value;
-            const doctorId = document.getElementById("doctorId").value;
-            const taxId = 7; // ID do imposto, conforme fornecido
-            const accumulatedSales = salesData[doctorId].totalSales || 0; // Total acumulado de vendas
-            const accumulatedTaxes = salesData[doctorId].totalTaxes || 0; // Total acumulado de impostos
-    
-            const webhookUrl = 'https://discord.com/api/webhooks/1302297331449725050/-79XhjOQYiiSNBaOq0A9WQezJ5lD-rywn3I5jgrDdRl2wJ_-iZOvpyVosShzJO2kq-OG'; // Sua URL de webhook
+            const taxAmount = totalAmount * 0.40; // Cálculo do imposto (40%)
+            const taxId = 7; // ID do imposto
+            const accumulatedSales = totalAmount; // Total acumulado de vendas (pode ser modificado conforme necessário)
+            const accumulatedTaxes = taxAmount; // Total acumulado de impostos
+
+            // Exibe os dados formatados
+            const dataDisplay = document.getElementById("dataDisplay");
+            dataDisplay.innerHTML = `
+                <strong>Detalhes da Venda:</strong><br>
+                👤 Nome do Cliente: ${clientName}<br>
+                🆔 Número do Passaporte: ${passportNumber}<br>
+                📦 Quantidade Vendida: ${soldQuantity}<br>
+                💵 Valor por Remédio: R$ ${parseFloat(RemédioValue).toFixed(2)}<br>
+                💰 Total a Pagar: R$ ${parseFloat(totalAmount).toFixed(2)}<br>
+                ⚠️ Imposto Calculado (40%): R$ ${parseFloat(taxAmount).toFixed(2)}<br>
+                🩺 Nome do Médico: ${doctorName}<br>
+                🆔 ID do Médico: ${doctorId}<br>
+                📑 ID do Imposto: ${taxId}<br>
+                💼 Total Acumulado de Vendas: R$ ${accumulatedSales.toFixed(2)}<br>
+                💸 Total Acumulado de Impostos: R$ ${accumulatedTaxes.toFixed(2)}
+            `;
+            dataDisplay.style.display = 'block'; // Exibe a seção de dados formatados
+
+            // Criação do embed para o webhook
             const payload = {
                 embeds: [{
-                    color: 3447003, // Cor verde
+                    color: 3447003,
                     author: {
                         name: "💊 Venda Registrada",
-                        icon_url: "https://cdn-icons-png.flaticon.com/128/17705/17705887.png" // Ícone
+                        icon_url: "https://cdn-icons-png.flaticon.com/128/17705/17705887.png"
                     },
                     description: "Os detalhes da venda são os seguintes:",
                     fields: [
-                        {
-                            name: "👤 Nome do Cliente",
-                            value: clientName,
-                            inline: true
-                        },
-                        {
-                            name: "🆔 Número do Passaporte",
-                            value: passportNumber,
-                            inline: true
-                        },
-                        {
-                            name: "📦 Quantidade Vendida",
-                            value: soldQuantity,
-                            inline: true
-                        },
-                        {
-                            name: "💵 Valor por Remédio",
-                            value: `R$ ${parseFloat(RemédioValue).toFixed(2)}`,
-                            inline: true
-                        },
-                        {
-                            name: "💰 Total a Pagar",
-                            value: `R$ ${parseFloat(totalAmount).toFixed(2)}`,
-                            inline: true
-                        },
-                        {
-                            name: "⚠️ Imposto Calculado (40%)",
-                            value: `R$ ${parseFloat(taxAmount).toFixed(2)}`,
-                            inline: true
-                        },
-                        {
-                            name: "🩺 Nome do Médico",
-                            value: doctorName,
-                            inline: true
-                        },
-                        {
-                            name: "🆔 ID do Médico",
-                            value: doctorId,
-                            inline: true
-                        },
-                        {
-                            name: "📑 ID do Imposto",
-                            value: taxId,
-                            inline: true
-                        },
-                        {
-                            name: "💼 Total Acumulado de Vendas",
-                            value: `R$ ${accumulatedSales.toFixed(2)}`,
-                            inline: true
-                        },
-                        {
-                            name: "💸 Total Acumulado de Impostos",
-                            value: `R$ ${accumulatedTaxes.toFixed(2)}`,
-                            inline: true
-                        }
+                        { name: "👤 Nome do Cliente", value: clientName, inline: true },
+                        { name: "🆔 Número do Passaporte", value: passportNumber, inline: true },
+                        { name: "📦 Quantidade Vendida", value: soldQuantity, inline: true },
+                        { name: "💵 Valor por Remédio", value: `R$ ${parseFloat(RemédioValue).toFixed(2)}`, inline: true },
+                        { name: "💰 Total a Pagar", value: `R$ ${parseFloat(totalAmount).toFixed(2)}`, inline: true },
+                        { name: "⚠️ Imposto Calculado (40%)", value: `R$ ${parseFloat(taxAmount).toFixed(2)}`, inline: true },
+                        { name: "🩺 Nome do Médico", value: doctorName, inline: true },
+                        { name: "🆔 ID do Médico", value: doctorId, inline: true },
+                        { name: "📑 ID do Imposto", value: taxId, inline: true },
+                        { name: "💼 Total Acumulado de Vendas", value: `R$ ${accumulatedSales.toFixed(2)}`, inline: true },
+                        { name: "💸 Total Acumulado de Impostos", value: `R$ ${accumulatedTaxes.toFixed(2)}`, inline: true }
                     ],
                     footer: {
                         text: "Registro gerado automaticamente",
-                        icon_url: "https://cdn-icons-png.flaticon.com/128/17705/17705887.png" // Ícone
+                        icon_url: "https://cdn-icons-png.flaticon.com/128/17705/17705887.png"
                     },
-                    timestamp: new Date().toISOString() // Adiciona um timestamp
+                    timestamp: new Date().toISOString()
                 }]
             };
-    
-            fetch(webhookUrl, {
+
+            // Mostra a saída do embed (opcional)
+            const embedOutput = document.getElementById("embedOutput");
+            embedOutput.innerText = JSON.stringify(payload, null, 2); // Formata o JSON com recuos
+            embedOutput.style.display = 'block'; // Exibe a seção de saída do embed
+        });
+
+        document.getElementById("sendWebhook").addEventListener("click", function() {
+            const payload = {
+                embeds: [{
+                    color: 3447003,
+                    author: {
+                        name: "💊 Venda Registrada",
+                        icon_url: "https://cdn-icons-png.flaticon.com/128/17705/17705887.png"
+                    },
+                    description: "Os detalhes da venda são os seguintes:",
+                    fields: [
+                        { name: "👤 Nome do Cliente", value: document.getElementById("clientName").value, inline: true },
+                        { name: "🆔 Número do Passaporte", value: document.getElementById("passportNumber").value, inline: true },
+                        { name: "📦 Quantidade Vendida", value: document.getElementById("soldQuantity").value, inline: true },
+                        { name: "💵 Valor por Remédio", value: `R$ ${parseFloat(document.getElementById("RemédioValue").value).toFixed(2)}`, inline: true },
+                        { name: "💰 Total a Pagar", value: `R$ ${(parseFloat(document.getElementById("soldQuantity").value) * parseFloat(document.getElementById("RemédioValue").value)).toFixed(2)}`, inline: true },
+                        { name: "⚠️ Imposto Calculado (40%)", value: `R$ ${((parseFloat(document.getElementById("soldQuantity").value) * parseFloat(document.getElementById("RemédioValue").value)) * 0.40).toFixed(2)}`, inline: true },
+                        { name: "🩺 Nome do Médico", value: document.getElementById("doctorName").value, inline: true },
+                        { name: "🆔 ID do Médico", value: document.getElementById("doctorId").value, inline: true },
+                        { name: "📑 ID do Imposto", value: 7, inline: true },
+                        { name: "💼 Total Acumulado de Vendas", value: `R$ ${0.00.toFixed(2)}`, inline: true }, // Modifique conforme necessário
+                        { name: "💸 Total Acumulado de Impostos", value: `R$ ${0.00.toFixed(2)}`, inline: true } // Modifique conforme necessário
+                    ],
+                    footer: {
+                        text: "Registro gerado automaticamente",
+                        icon_url: "https://cdn-icons-png.flaticon.com/128/17705/17705887.png"
+                    },
+                    timestamp: new Date().toISOString()
+                }]
+            };
+
+            fetch('https://discord.com/api/webhooks/1302297331449725050/-79XhjOQYiiSNBaOq0A9WQezJ5lD-rywn3I5jgrDdRl2wJ_-iZOvpyVosShzJO2kq-OG', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payload)
             })
             .then(response => {
                 if (response.ok) {
-                    alert('Dados enviados com sucesso!');
+                    alert("Dados enviados com sucesso!");
                 } else {
-                    alert('Erro ao enviar os dados.');
+                    alert("Erro ao enviar os dados.");
                 }
             })
             .catch(error => {
                 console.error('Erro:', error);
-                alert('Ocorreu um erro ao enviar os dados.');
+                alert("Erro ao enviar os dados.");
             });
         });
     </script>
+</body>
 </html>
