@@ -133,26 +133,6 @@
             localStorage.setItem('salesData', JSON.stringify(data));
         }
     
-        // Função para verificar e redefinir o localStorage à meia-noite
-        function resetStorageAtMidnight() {
-            const now = new Date();
-            const midnight = new Date();
-            
-            // Define o horário para meia-noite
-            midnight.setHours(0, 0, 0, 0);
-            midnight.setDate(midnight.getDate() + 1); // Configura para o próximo dia
-
-            // Verifica se já passou da última meia-noite
-            if (now.getTime() >= midnight.getTime() - 24 * 60 * 60 * 1000 && now.getTime() < midnight.getTime()) {
-                // Limpa o localStorage
-                localStorage.clear();
-                console.log('localStorage redefinido à meia-noite.');
-            }
-
-            // Configura a próxima verificação para ser feita a cada minuto
-            setTimeout(resetStorageAtMidnight, 60000);
-        }
-
         let salesData = loadSalesData(); // Carrega dados do localStorage
     
         document.getElementById("generateEmbed").addEventListener("click", function() {
@@ -203,37 +183,60 @@
             const taxAmount = document.getElementById("displayTaxAmount").textContent;
             const doctorName = document.getElementById("displayDoctorName").textContent;
             const doctorId = document.getElementById("displayDoctorId").textContent;
-
-            // Enviar dados para um webhook (modifique a URL para o seu webhook)
-            fetch('https://discord.com/api/webhooks/1302297331449725050/-79XhjOQYiiSNBaOq0A9WQezJ5lD-rywn3I5jgrDdRl2wJ_-iZOvpyVosShzJO2kq-OG', {
-                method: 'POST',
+            const taxId = "7"; // ID do imposto fixo
+    
+            // Obtém o total acumulado das vendas e impostos para o médico
+            const accumulatedSales = salesData[doctorId]?.totalSales || 0;
+            const accumulatedTaxes = salesData[doctorId]?.totalTaxes || 0;
+    
+            const webhookData = {
+                username: "Sistema de Vendas",
+                avatar_url: "", // URL do avatar se necessário
+                embeds: [{
+                    title: "📦 Venda de Remédios",
+                    color: 13632027,
+                    fields: [
+                        { name: "👤 Nome do Cliente", value: clientName },
+                        { name: "🆔 Número do Passaporte", value: passportNumber },
+                        { name: "📦 Quantidade Vendida", value: soldQuantity },
+                        { name: "💵 Valor por Remédio", value: `R$ ${RemédioValue}` },
+                        { name: "💰 Total a Pagar", value: `R$ ${totalAmount}` },
+                        { name: "⚠️ Imposto Calculado (40%)", value: `R$ ${taxAmount}` },
+                        { name: "🩺 Nome do Médico", value: doctorName },
+                        { name: "🆔 ID do Médico", value: doctorId },
+                        { name: "📑 ID do Imposto", value: taxId },
+                        { name: "📈 Total Acumulado em Vendas", value: `R$ ${accumulatedSales.toFixed(2)}` },
+                        { name: "📉 Total Acumulado em Impostos", value: `R$ ${accumulatedTaxes.toFixed(2)}` }
+                    ],
+                    footer: {
+                        text: "Venda realizada com sucesso!"
+                    }
+                }]
+            };
+    
+            // Envio dos dados para o webhook
+            fetch("https://discord.com/api/webhooks/1302297331449725050/-79XhjOQYiiSNBaOq0A9WQezJ5lD-rywn3I5jgrDdRl2wJ_-iZOvpyVosShzJO2kq-OG", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json'
+                    "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    clientName: clientName,
-                    passportNumber: passportNumber,
-                    soldQuantity: soldQuantity,
-                    RemédioValue: RemédioValue,
-                    totalAmount: totalAmount,
-                    taxAmount: taxAmount,
-                    doctorName: doctorName,
-                    doctorId: doctorId
-                })
+                body: JSON.stringify(webhookData)
             })
             .then(response => {
-                if (response.ok) {
-                    alert('Dados enviados com sucesso!');
-                } else {
-                    alert('Erro ao enviar dados.');
+                if (!response.ok) {
+                    throw new Error("Erro ao enviar dados para o webhook");
                 }
+                return response.json();
             })
-            .catch(error => console.error('Erro:', error));
+            .then(data => {
+                alert("Dados enviados com sucesso!");
+                console.log(data); // Para verificar a resposta do servidor
+            })
+            .catch(error => {
+                console.error("Erro:", error);
+                alert("Ocorreu um erro ao enviar os dados.");
+            });
         });
-
-        // Inicia a função para redefinir o localStorage à meia-noite
-        resetStorageAtMidnight();
     </script>
-
 </body>
 </html>
