@@ -116,7 +116,7 @@
             <div class="data-entry"><strong>⚠️ Imposto Calculado (40%):</strong> R$ <span id="displayTaxAmount"></span></div>
             <div class="data-entry"><strong>🩺 Nome do Médico:</strong> <span id="displayDoctorName"></span></div>
             <div class="data-entry"><strong>🆔 ID do Médico:</strong> <span id="displayDoctorId"></span></div>
-            <div class="data-entry"><strong>📑 ID do Imposto:</strong> 7</div>
+            <div class="data-entry"><strong>📑 ID do Imposto:</strong> 1169</div>
             <button id="sendWebhook" style="margin-top: 10px;">Enviar Dados</button>
         </div>
     </div>
@@ -133,6 +133,26 @@
             localStorage.setItem('salesData', JSON.stringify(data));
         }
     
+        // Função para verificar e redefinir o localStorage à meia-noite
+        function resetStorageAtMidnight() {
+            const now = new Date();
+            const midnight = new Date();
+            
+            // Define o horário para meia-noite
+            midnight.setHours(0, 0, 0, 0);
+            midnight.setDate(midnight.getDate() + 1); // Configura para o próximo dia
+
+            // Verifica se já passou da última meia-noite
+            if (now.getTime() >= midnight.getTime() - 24 * 60 * 60 * 1000 && now.getTime() < midnight.getTime()) {
+                // Limpa o localStorage
+                localStorage.clear();
+                console.log('localStorage redefinido à meia-noite.');
+            }
+
+            // Configura a próxima verificação para ser feita a cada minuto
+            setTimeout(resetStorageAtMidnight, 60000);
+        }
+
         let salesData = loadSalesData(); // Carrega dados do localStorage
     
         document.getElementById("generateEmbed").addEventListener("click", function() {
@@ -183,106 +203,37 @@
             const taxAmount = document.getElementById("displayTaxAmount").textContent;
             const doctorName = document.getElementById("displayDoctorName").textContent;
             const doctorId = document.getElementById("displayDoctorId").textContent;
-            const taxId = "7"; // ID do imposto fixo
-    
-            // Obtém o total acumulado das vendas e impostos para o médico
-            const accumulatedSales = salesData[doctorId]?.totalSales || 0;
-            const accumulatedTaxes = salesData[doctorId]?.totalTaxes || 0;
-    
-            const webhookURL = "https://discord.com/api/webhooks/1302297331449725050/-79XhjOQYiiSNBaOq0A9WQezJ5lD-rywn3I5jgrDdRl2wJ_-iZOvpyVosShzJO2kq-OG"; // Substitua pelo seu webhook
-            const payload = {
-                embeds: [{
-                    color: 3447003, // Cor verde
-                    author: {
-                        name: "💊 Venda Registrada",
-                        icon_url: "https://cdn-icons-png.flaticon.com/128/17705/17705887.png" // Adicione um ícone se desejado
-                    },
-                    description: "Os detalhes da venda são os seguintes:",
-                    fields: [
-                        {
-                            name: "👤 Nome do Cliente",
-                            value: clientName,
-                            inline: true
-                        },
-                        {
-                            name: "🆔 Número do Passaporte",
-                            value: passportNumber,
-                            inline: true
-                        },
-                        {
-                            name: "📦 Quantidade Vendida",
-                            value: soldQuantity,
-                            inline: true
-                        },
-                        {
-                            name: "💵 Valor por Remédio",
-                            value: `R$ ${parseFloat(RemédioValue).toFixed(2)}`,
-                            inline: true
-                        },
-                        {
-                            name: "💰 Total a Pagar",
-                            value: `R$ ${parseFloat(totalAmount).toFixed(2)}`,
-                            inline: true
-                        },
-                        {
-                            name: "⚠️ Imposto Calculado (40%)",
-                            value: `R$ ${parseFloat(taxAmount).toFixed(2)}`,
-                            inline: true
-                        },
-                        {
-                            name: "🩺 Nome do Médico",
-                            value: doctorName,
-                            inline: true
-                        },
-                        {
-                            name: "🆔 ID do Médico",
-                            value: doctorId,
-                            inline: true
-                        },
-                        {
-                            name: "📑 ID do Imposto",
-                            value: taxId,
-                            inline: true
-                        },
-                        {
-                            name: "💼 Total Acumulado de Vendas",
-                            value: `R$ ${accumulatedSales.toFixed(2)}`,
-                            inline: true
-                        },
-                        {
-                            name: "💸 Total Acumulado de Impostos",
-                            value: `R$ ${accumulatedTaxes.toFixed(2)}`,
-                            inline: true
-                        }
-                    ],
-                    footer: {
-                        text: "Registro gerado automaticamente",
-                        icon_url: "https://cdn-icons-png.flaticon.com/128/17705/17705887.png" // Adicione um ícone se desejado
-                    },
-                    timestamp: new Date().toISOString() // Adiciona um timestamp
-                }]
-            };
-    
-            fetch(webhookURL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+
+            // Enviar dados para um webhook (modifique a URL para o seu webhook)
+            fetch('https://discord.com/api/webhooks/1302297331449725050/-79XhjOQYiiSNBaOq0A9WQezJ5lD-rywn3I5jgrDdRl2wJ_-iZOvpyVosShzJO2kq-OG', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    clientName: clientName,
+                    passportNumber: passportNumber,
+                    soldQuantity: soldQuantity,
+                    RemédioValue: RemédioValue,
+                    totalAmount: totalAmount,
+                    taxAmount: taxAmount,
+                    doctorName: doctorName,
+                    doctorId: doctorId
+                })
             })
             .then(response => {
                 if (response.ok) {
-                    alert("Dados enviados com sucesso!");
+                    alert('Dados enviados com sucesso!');
                 } else {
-                    return response.text().then(text => { 
-                        alert("Erro ao enviar os dados: " + text);
-                    });
+                    alert('Erro ao enviar dados.');
                 }
             })
-            .catch(error => {
-                console.error('Erro ao enviar dados para o webhook:', error);
-                alert("Erro ao enviar os dados.");
-            });
+            .catch(error => console.error('Erro:', error));
         });
+
+        // Inicia a função para redefinir o localStorage à meia-noite
+        resetStorageAtMidnight();
     </script>
-    
+
 </body>
 </html>
