@@ -191,7 +191,7 @@
     
             const webhookData = {
                 username: "Sistema de Vendas",
-                avatar_url: "", // URL do avatar se necessário
+        
                 embeds: [{
                     title: "📦 Venda de Remédios",
                     color: 13632027,
@@ -224,7 +224,7 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error("Erro ao enviar dados para o webhook");
+                    throw new Error(`Erro ao enviar dados para o webhook: ${response.status} - ${response.statusText}`);
                 }
                 return response.json();
             })
@@ -234,7 +234,7 @@
             })
             .catch(error => {
                 console.error("Erro:", error);
-                alert("Ocorreu um erro ao enviar os dados.");
+                alert(`Ocorreu um erro ao enviar os dados: ${error.message}`);
             });
         });
     </script>
