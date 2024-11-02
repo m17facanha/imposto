@@ -70,9 +70,6 @@
             max-height: 300px; /* Limita a altura máxima do output */
             overflow: auto; /* Adiciona rolagem se necessário */
         }
-        .data-entry {
-            margin-bottom: 5px;
-        }
     </style>
 </head>
 <body>
@@ -108,17 +105,10 @@
         <button id="generateEmbed">Gerar Embed</button>
 
         <div class="embed-output" id="embedOutput" style="display:none;">
-            <div class="data-entry"><strong>👤 Nome do Cliente:</strong> <span id="displayClientName"></span></div>
-            <div class="data-entry"><strong>🆔 Número do Passaporte:</strong> <span id="displayPassportNumber"></span></div>
-            <div class="data-entry"><strong>📦 Quantidade Vendida:</strong> <span id="displaySoldQuantity"></span></div>
-            <div class="data-entry"><strong>💵 Valor por Remédio:</strong> R$ <span id="displayRemédioValue"></span></div>
-            <div class="data-entry"><strong>💰 Total a Pagar:</strong> R$ <span id="displayTotalAmount"></span></div>
-            <div class="data-entry"><strong>⚠️ Imposto Calculado (40%):</strong> R$ <span id="displayTaxAmount"></span></div>
-            <div class="data-entry"><strong>🩺 Nome do Médico:</strong> <span id="displayDoctorName"></span></div>
-            <div class="data-entry"><strong>🆔 ID do Médico:</strong> <span id="displayDoctorId"></span></div>
-            <div class="data-entry"><strong>📑 ID do Imposto:</strong> 7</div>
-            <button id="sendWebhook" style="margin-top: 10px;">Enviar Dados</button>
+            <!-- Aqui podemos deixar vazio para enviar o embed -->
         </div>
+        
+        <button id="sendWebhook" style="margin-top: 10px;">Enviar Dados</button>
     </div>
 
     <script>
@@ -160,34 +150,93 @@
     
             // Salva os dados atualizados no localStorage
             saveSalesData(salesData);
-    
-            // Atualiza dados do cliente no output
-            document.getElementById("displayClientName").textContent = clientName;
-            document.getElementById("displayPassportNumber").textContent = passportNumber;
-            document.getElementById("displaySoldQuantity").textContent = soldQuantity + " Remédios";
-            document.getElementById("displayRemédioValue").textContent = RemédioValue.toFixed(2);
-            document.getElementById("displayTotalAmount").textContent = totalAmount.toFixed(2);
-            document.getElementById("displayTaxAmount").textContent = taxAmount.toFixed(2);
-            document.getElementById("displayDoctorName").textContent = doctorName;
-            document.getElementById("displayDoctorId").textContent = doctorId;
-    
-            document.getElementById("embedOutput").style.display = "block"; // Mostra a saída do embed
         });
     
         document.getElementById("sendWebhook").addEventListener("click", function() {
-            const clientName = document.getElementById("displayClientName").textContent;
-            const passportNumber = document.getElementById("displayPassportNumber").textContent;
-            const soldQuantity = document.getElementById("displaySoldQuantity").textContent;
-            const RemédioValue = document.getElementById("displayRemédioValue").textContent;
-            const totalAmount = document.getElementById("displayTotalAmount").textContent;
-            const taxAmount = document.getElementById("displayTaxAmount").textContent;
-            const doctorName = document.getElementById("displayDoctorName").textContent;
-            const doctorId = document.getElementById("displayDoctorId").textContent;
-            const currentDate = new Date().toLocaleString(); // Obtém a data e hora atual
+            const clientName = document.getElementById("clientName").value;
+            const passportNumber = document.getElementById("passportNumber").value;
+            const soldQuantity = document.getElementById("soldQuantity").value;
+            const RemédioValue = document.getElementById("RemédioValue").value;
+            const totalAmount = soldQuantity * RemédioValue; // Recalcula o total
+            const taxAmount = totalAmount * 0.40; // Recalcula o imposto
+            const doctorName = document.getElementById("doctorName").value;
+            const doctorId = document.getElementById("doctorId").value;
+            const taxId = 7; // ID do imposto, conforme fornecido
+            const accumulatedSales = salesData[doctorId].totalSales || 0; // Total acumulado de vendas
+            const accumulatedTaxes = salesData[doctorId].totalTaxes || 0; // Total acumulado de impostos
     
             const webhookUrl = 'https://discord.com/api/webhooks/1302297331449725050/-79XhjOQYiiSNBaOq0A9WQezJ5lD-rywn3I5jgrDdRl2wJ_-iZOvpyVosShzJO2kq-OG'; // Sua URL de webhook
             const payload = {
-                content: `💊 Venda Registrada\nOs detalhes da venda são os seguintes:\n👤 Nome do Cliente: ${clientName}\n🆔 Número do Passaporte: ${passportNumber}\n📦 Quantidade Vendida: ${soldQuantity}\n💵 Valor por Remédio: R$ ${RemédioValue}\n💰 Total a Pagar: R$ ${totalAmount}\n⚠️ Imposto Calculado (40%): R$ ${taxAmount}\n🩺 Nome do Médico: ${doctorName}\n🆔 ID do Médico: ${doctorId}\n📑 ID do Imposto: 7\n💼 Total Acumulado de Vendas: R$ ${salesData[doctorId].totalSales.toFixed(2)}\n💸 Total Acumulado de Impostos: R$ ${salesData[doctorId].totalTaxes.toFixed(2)}\n\nRegistro gerado automaticamente • ${currentDate}`
+                embeds: [{
+                    color: 3447003, // Cor verde
+                    author: {
+                        name: "💊 Venda Registrada",
+                        icon_url: "https://cdn-icons-png.flaticon.com/128/17705/17705887.png" // Ícone
+                    },
+                    description: "Os detalhes da venda são os seguintes:",
+                    fields: [
+                        {
+                            name: "👤 Nome do Cliente",
+                            value: clientName,
+                            inline: true
+                        },
+                        {
+                            name: "🆔 Número do Passaporte",
+                            value: passportNumber,
+                            inline: true
+                        },
+                        {
+                            name: "📦 Quantidade Vendida",
+                            value: soldQuantity,
+                            inline: true
+                        },
+                        {
+                            name: "💵 Valor por Remédio",
+                            value: `R$ ${parseFloat(RemédioValue).toFixed(2)}`,
+                            inline: true
+                        },
+                        {
+                            name: "💰 Total a Pagar",
+                            value: `R$ ${parseFloat(totalAmount).toFixed(2)}`,
+                            inline: true
+                        },
+                        {
+                            name: "⚠️ Imposto Calculado (40%)",
+                            value: `R$ ${parseFloat(taxAmount).toFixed(2)}`,
+                            inline: true
+                        },
+                        {
+                            name: "🩺 Nome do Médico",
+                            value: doctorName,
+                            inline: true
+                        },
+                        {
+                            name: "🆔 ID do Médico",
+                            value: doctorId,
+                            inline: true
+                        },
+                        {
+                            name: "📑 ID do Imposto",
+                            value: taxId,
+                            inline: true
+                        },
+                        {
+                            name: "💼 Total Acumulado de Vendas",
+                            value: `R$ ${accumulatedSales.toFixed(2)}`,
+                            inline: true
+                        },
+                        {
+                            name: "💸 Total Acumulado de Impostos",
+                            value: `R$ ${accumulatedTaxes.toFixed(2)}`,
+                            inline: true
+                        }
+                    ],
+                    footer: {
+                        text: "Registro gerado automaticamente",
+                        icon_url: "https://cdn-icons-png.flaticon.com/128/17705/17705887.png" // Ícone
+                    },
+                    timestamp: new Date().toISOString() // Adiciona um timestamp
+                }]
             };
     
             fetch(webhookUrl, {
@@ -206,9 +255,8 @@
             })
             .catch(error => {
                 console.error('Erro:', error);
-                alert('Erro ao enviar os dados.');
+                alert('Ocorreu um erro ao enviar os dados.');
             });
         });
     </script>
-</body>
 </html>
